@@ -1,0 +1,711 @@
+;Juan Diego Vivas Guevara (c200279)
+;Iker Sampedro Sanchez (c200257)
+;Grupo: 3S1MPAII
+ 
+LEA:        MACRO  (reg, ETIQ)
+            or     reg, r0,  low(ETIQ)
+            or.u   reg, reg, high(ETIQ)
+            ENDMACRO
+
+
+PUSH:       MACRO  (reg)
+            subu   r30, r30, 4
+            st     reg, r30, r0
+            ENDMACRO
+
+
+POP:        MACRO  (reg)
+	        ld reg, r30, r0
+            addu   r30, r30, 4
+            ENDMACRO
+
+		  
+LOAD:   	MACRO (ra, etiq)
+			LEA (ra, etiq)
+			ld ra, ra, 0
+		    ENDMACRO
+			
+			br PPAL8
+;////////////Programas principales para las pruebas de cada subrutina/////////////
+			
+PPAL1:      	add r30, r0, 10000  ;Puntero de la pila
+				LEA (r10, cadena)  ;Introduce la direccion de cadena en r10
+				PUSH (r10)         ;Se introduce la direccion de cadena en la pila
+				bsr  LongCad       ;Llama a la subrutina LongCad
+				POP (r4)           ;Se elimina la cadena de la pila
+				stop
+
+			
+PPAL2: 			add r30, r0, 10000  ;Puntero de la pila
+				LOAD (r13, to)     ;Introduce la direccion de to en r13
+				PUSH (r13)         ;Se introduce la direccion de to en la pila
+				LOAD  (r12, from)  ;Introduce la direccion de from en r12
+				PUSH (r12)		   ;Se introduce la direccion de from en la pila
+				LEA (r11, ref)     ;Introduce la direccion de caracter en r11
+				PUSH (r11)         ;Se introduce la direccion de caracter en la pila
+				LOAD (r10, C)      ;Introduce la direccion de cadena en r10
+				PUSH (r10)         ;Se introduce la cadena en la pila
+				bsr BuscaCar       ;Llama a la subrutina BuscaCar
+				POP (r4)           ;Elimina los elementos de la pila
+				POP (r4)
+				POP (r4)
+				POP (r4)
+				stop
+
+
+PPAL3:      	add r30, r0, 10000  ;Puntero de la pila
+				LEA (r10, cadena1) ;Introduce la direccion de cadena1 en r10
+				PUSH (r10)         ;Se introduce la direccion de cadena1 en la pila
+				LEA (r11, cadena2) ;Introduce la direccion de cadena2 en r11
+				PUSH (r11)         ;Se introduce la direccion de cadena2 en la pila
+				bsr CoincidenCad   ;Llama a la subrutina CoincidenCad
+				POP (r4)           ;Elimina los elementos de la pila
+				POP (r4)
+				stop
+			
+			
+PPAL4:			add r30, r0, 10000  ;Puntero de la pila
+				LEA (r10, jj)      ;Introduce la direccion de jj en r10
+				PUSH (r10)
+				LOAD  (r11, max)   ;Introduce el valor de max en r11
+				PUSH (r11)	
+				LEA (r12, ref2)     ;Introduce la direccion de ref en r12
+				PUSH (r12) 
+				bsr BuscaMax
+				POP (r4)		   ;Elimina los elementos de la pila
+				POP (r4)
+				POP (r4)
+				stop
+			
+			
+PPAL5:     		add r30, r0, 10000  ;Puntero de la pila	
+				LEA (r10, texto)      ;Introduce la direccion de jj en r10
+				PUSH (r10)	
+				bsr Checksum
+				POP (r4)
+				stop
+				
+PPAL6:      	add r30, r0, 10000  ;Puntero de pila
+				LEA (r11, comprdo)  ;dir texto comprimido (resultado)
+				PUSH (r11)
+				LEA (r10, texto2)  ;dir texto a comprimir
+				PUSH (r10)
+				bsr Comprime
+				POP (r4)
+				POP (r4)
+				stop
+				
+PPAL7:      	add r30, r0, 10000
+				LEA (r11, desc)  ;dir texto descomprimido (resultado)
+				PUSH (r11)
+				LEA (r10, com)  ;dir texto a descomprimir
+				PUSH (r10)
+				bsr Descomprime
+				POP (r4)
+				POP (r4)
+				stop
+			
+PPAL8:      	add r30, r0, 10000
+				LEA (r12, CheckSum1)  ;dir checksum sin comprimir y descomprimir
+				PUSH (r12)
+				LEA (r11, CheckSum2)  ;dir checksum despuede de comprimir y descomrimmir
+				PUSH (r11)
+				LEA (r10, texto2)  ;dir texto a comprimir y descomprimir
+				PUSH (r10)
+				bsr Verifica
+				POP (r4)
+				POP (r4)
+				POP (r4)
+				stop
+				
+				
+LongCad:  		PUSH(r1)            ;Introduzco r1 en la pila para el retorno 
+				ld r5, r30, 4       ;Cargo la direccion introducida en la pila en r5 mediante el puntero de pila
+				add r29, r0, r0     ;Inicializo r29 a 0 (para recorrer la cadena)
+BUCLE1:  		ld.bu r10, r5, r29  ;Se carga byte por byte el elemento que es apuntado por la direccion (al aumentar r29 se recorre la cadena)
+				add r29, r29, 1     ;Se incrementa r29
+				cmp r3, r10, 0      ;Si el caracter en la posicion r29 de la cadena es igual a 0, fin de la cadena
+				bb0 eq, r3, BUCLE1  ;Si no son iguales repito el proceso
+				add r29, r29, -1    ;Introduzco r29 - 1 en r29 (resto 1 para no contar /0)
+				POP(r1)             ;Se elimina r1 de la pila
+				jmp(r1)             ;Retorno
+			
+			
+BuscaCar:   	PUSH(r1)             ;Introduzco r1 en la pila para el retorno    
+				ld r14, r30, 4       ;Cargo las direcciones introducidas en la pila en los registros mediante el puntero de pila
+				ld r15, r30, 8    
+				ld r16, r30, 12
+				ld r17, r30, 16
+				add r29, r0, r0
+BUCLE2:			ld.bu r11, r15, r16  ;Se carga byte por byte el elemento que es apuntado por la direccion (al aumentar r12 se recorre la cadena)
+				cmp r3, r16, r17     ;Comparo from y to
+				add r16, r16, 1      ;Se incrementa r12 (from)
+				bb1 eq, r3, FIN2     ;Si son iguales termina
+				cmp r3, r11, r14     ;Comparo el caracter en la posicion from de la cadena con el caracter a buscar
+				bb0 eq, r3, BUCLE2   ;Si no son iguales repito el proceso
+FIN2:			add r29, r16, -1     ;Guarda el valor de from en r29
+				POP(r1)              ;Se elimina r1 de la pila
+				jmp(r1)              ;Retorno
+		  
+
+CoincidenCad:   PUSH(r1)            ;Introduzco r1 en la pila para el retorno  
+				ld r14, r30, 4      ;Cargo las direcciones introducidas en la pila en los registros mediante el puntero de pila
+				ld r15, r30, 8
+				add r5, r0, r0      ;Inicializo r5 a 0 (para recorrer las dos cadenas)  
+				add r29, r0, r0
+BUCLE3:			ld.bu r10, r14, r5  ;Se carga byte por byte el elemento que es apuntado por la direccion
+				ld.bu r11, r15, r5
+				add r5, r5, 1       ;Incremento r5(para recorrer las cadenas)
+				add r29, r29, 1     ;Incremento r29 para el resultado
+				cmp r3, r10, 0      ;Comparo el caracter de la posicion r5 de la cadena1 con 0 (si es 0 ha terminado)
+				bb1 eq, r3, FIN3    ;Si son iguales termina
+				cmp r3, r10, r11    ;Comparo los caracteres de las posiciones r5 y r6 de las cadenas
+				bb1 eq, r3, BUCLE3  ;Si son iguales puedo continuar y repito el proceso
+FIN3:		    add r29, r29, -1    ;Se resta 1 a r29 (para no contar la posicion en la que los caracteres son desiguales o para no contar /0)
+				POP(r1)             ;Se elimina r1 de la pila
+				jmp(r1)             ;Retorno
+
+				
+BuscaMax: 		PUSH(r1)
+				PUSH(r31)			
+				add r31, r30, r0
+				sub r30, r30, 8  ;dos variables locales, P y L
+				add r29, r0, r0  ;pongo r29 a 0
+				add r13, r0, r0  ;P = 0
+				add r14, r0, r0  ;L = 0
+				st r13, r31, -4	 ;valor de P
+				st r14, r31, -8	 ;valor de L
+				
+LMAYOR:			st r29, r31, -8  ;guardo L
+				add r13, r13, -1  ;decremento P en 1, anulo en incremento anterior
+				ld r15, r31, 16  ;dir de jj
+				st r13, r15, 0	;guardo P en jj
+				add r13, r13, 1  ;vuelvo a incrementar P para la siguiente busqueda
+				cmp r3, r29, 254  ;L mayor que 255
+				bb1 gt, r3, Terminado  ;se devuelve ya el resultado
+				
+BUCLEBUSCAR4:   ld r12, r31, 8  ;direccion de ref
+				ld r11, r31, 12  ;valor de max
+				PUSH(r11)  ;to = max
+				PUSH(r13)  ;from = P
+				PUSH(r12)  ;ref = ref
+				ld.bu r15, r12, r11  ;caracter a buscar
+				PUSH(r15)  ;C = ref, byte max
+				bsr BuscaCar
+				POP(r4)
+				POP(r4)
+				POP(r4)
+				POP(r4)
+				st r29, r31, -4  ;guardo P
+				ld r13, r31, -4	 ;P --> r13 
+				ld r11, r31, 12  ;valor de max
+				cmp r3, r13, r11
+				bb1 eq, r3, FIN4  ;si P == max ya se ha terminado
+                ld r12, r31, 8  ;direccion de ref
+				add r20, r12, r13  ;ref + p
+				add r21, r12, r11  ;ref + max
+				PUSH(r20)
+				PUSH(r21)
+				bsr CoincidenCad
+				POP(r4)
+				POP(r4)
+				ld r13, r31, -4	 ;P --> r13
+				ld r14, r31, -8  ;L --> r14
+				add r13, r13, 1  ;incremento P, siguiente busqueda a partir del siguiente carcater
+				cmp r3, r29, r14
+				bb1 gt, r3, LMAYOR  ;si resultado actual > L, se actualiza eel valor de L
+				br BUCLEBUSCAR4
+
+Terminado:      add r5, r0, 255  ;L mayor que 255, se devuelve 255
+				st r5, r31, -8  ;guardo el resultado = 255
+FIN4:           ld r29, r31, -8  ;cargo en r29 el L almacenado
+				add r30, r30, 8  ;recupero r30 a su valor inicial
+				POP(r31) 
+				POP(r1) 
+				jmp(r1)
+
+Checksum:  		PUSH(r1)
+				PUSH(r31)
+				add r31, r30, r0
+				sub r30, r30, 4  ;dejo un espacio para resultado de longcad
+				ld r10, r31, 8  ;direccion de texto
+				PUSH (r10)
+				bsr LongCad
+				POP (r4)
+				st r29, r31, -4  ;guardo longcad
+				ld r11, r31, -4	 ;longitud cadena
+				add r29, r0, 0  ;pongo r29 a 0
+				ld r10, r31, 8  ;direccion de texto
+
+BUCLE5:			cmp r3, r11, 3
+				bb0 gt, r3, PALFINAL  ;si no se cumple r11 > 3 (se cumple r11 <= 3), va a FIN5
+				ld r12, r10, 0  ;palabra en la direccion de texto 
+				addu r29, r29, r12  ;sumo esa palabra al resultado
+				add r11, r11, -4  ;decremento valor de longcad en 4(tamaño palabra)
+				add r10, r10, 4 ;incremento el puntero en 4(siguiente palabra)
+				br BUCLE5
+
+PALFINAL:		ld r12, r10, 0  ;cargo la ultima palabra en r12
+				cmp r3, r11, 0  ;si longcad = 0
+				bb1 eq, r3, FIN51  ;longcad era múltiplo de 4,ya se han sumado todas las palabras         
+				cmp r3, r11, 3  ;si longcad = 3
+				bb1 eq, r3, FIN52  ;la ultima palabra contiene 3 bytes de los 3 ultimos caracteres y uno del "\0", se suma la palabra entera
+				and.u r12, r12, 0000  ;si longcad = 1 o 2, la ultima mitad de la palabra no se debe sumar (se pone a 0000)
+				cmp r3, r11, 2  ;si longcad = 2
+				bb1 eq, r3, FIN52  ;se suma la palabra con ultima mitad a 0000
+				ld.bu r12, r10, 0  ;si longcad = 1 se suma solo el prmer byte
+				
+FIN52:          addu r29, r29, r12  ;fin en el que se suman ultimos caracteres a r29	
+FIN51:			add r30, r30, 4	 ;fin en el que ya no se suma nada a r29
+				POP(r31) 
+				POP(r1) 
+				jmp(r1)
+			
+	
+Comprime:   	PUSH(r1)
+				PUSH(r31)
+				add r31, r30, r0
+				sub r30, r30, 36  ;para variables locales
+				ld r10, r31, 8  ;dir texto
+				ld r6, r31, 12  ;dir comprimido
+				add r5, r6, 5  ;pos en mascBytes --> dir de Comprimido + 5(5 bytes del comienzo)
+				st r5, r31, -24  ;pos en mascBytes
+				st r0, r31, -28  ;byte temporal
+				add r5, r0, 0x27  ;pos byte temporal
+				st r5, r31, -32  
+				PUSH(r10)
+				bsr LongCad
+				POP(r4)
+				addu r5, r29, r0  ;almaceno longcad en r5
+				divu r9, r29, 4  ;division entera r29/4 --> r9
+				mulu r9, r9, 4   ;si r29 era multiplo de 4, r9*4 = r29
+				cmp r3, r9, r29
+				bb1 eq, r3, multiplo4
+				divu r9, r29, 4  ;no era multiplo de 4, r29/4 --> r9
+				addu r9, r9, 1  ; se suma 1 para llegar al siguiente entero multiplo de 4
+				mulu r29, r9, 4  ; (r9 + 1)*4 = r29
+				
+multiplo4:		sub r30, r30, r29  ;para texto comprimido 
+				st r5, r31, -4  ;longcad --> pos r31 - 4
+				st r5, r31, -36  ;longcad (este valor se ira modificando)
+				ld r10, r31, 8  ;dir texto
+				addu r5, r0, 8  ; M = 1*8 --> r5
+				st r5, r31, -8  ;pos en texto, de momento 8
+				st r5, r31, -20  ;pos en comprdo, de momento 8
+				add r5, r0, 0
+				add r18, r0, -37
+				
+first8bytes:	ld.bu r7, r10, r5  ;carga caracter de texto
+				st.b r7, r31, r18  ;copia el caracter
+				sub r18, r18, 1
+				add r5, r5, 1  ;incrementa los punteros
+				cmp r3, r5, 8
+				bb0 eq, r3, first8bytes
+
+buclBscMax:		ld r9, r31, -36  ;longcad --> r9
+				cmp r3, r9, 8  ;se compara con 8 (los 8 primeros caracteres ya estan leidos)
+				bb1 eq, r3, FinComp  ;ya se leyeron todos los caracteres de texto
+				sub r9, r9, 1
+				st r9, r31, -36
+				subu r2, r31, 12 ;guardo en r2 (jj) dir de r31 - 12, r31-12 contendra P
+				ld r5, r31, -8
+				PUSH (r2)  ;r2 --> jj
+				PUSH (r5)	;r5 --> max = 8
+				ld r10, r31, 8  ;r10 --> ref
+				PUSH (r10)
+				bsr BuscaMax	
+				POP(r4)
+				POP(r4)
+				POP(r4)
+				st r29, r31, -16  ;L --> r31 - 16
+				cmp r3, r29, 3  ;comparo L >= 4
+				bb1 gt, r3, Lmayor  
+				ld r15, r31, -8  ;pos en texto
+				ld r23, r31, 8  ;dir texto
+				ld.bu r16, r15, r23  ;caracter en esa pos del texto
+				ld r17, r31, -20 ;pos en comprdo
+				add r18, r0, -37
+				sub r18, r18, r17  ; r18 = -37 - pos comprdo
+				st.b r16, r31, r18
+				addu r15, r15, 1  ;incremento pos en texto
+				st r15, r31, -8
+				addu r17, r17, 1  ;incremento pos en comprdo
+				st r17, r31, -20
+				ld r5, r31, -32  ;pos en byte temporal --> r5
+				sub r5, r5, 1
+				cmp r3, r5, 0x1f 
+				bb1 eq, r3, actualizaB  ;si son iguales ya se ha terminado con ese byte temporal
+				st r5, r31, -32 ;guardo pos byte temporal
+				br buclBscMax
+
+Lmayor:			ld.bu r6, r31, -12  ;primer byte de P --> r6
+				ld.bu r7, r31, -11  ;segundo byte de P --> r7
+				ld r8, r31, -20  ;pos comprdo --> r8
+				add r18, r0, -37
+				sub r18, r18, r8  ; r18 = -37 - pos comprdo
+				st.b r6, r31, r18 ;guardo primer byte de P en comprdo
+				sub r18, r18, 1
+				st.b r7, r31, r18 ;guardo segundo byte de P en comprdo
+				sub r18, r18, 1
+				ld.bu r6, r31, -16 ;L --> r6 
+				st.b r6, r31, r18 ;guardo L en comprdo
+				addu r8, r8, 3  ;incremento en 3 pos en comprdo
+				st r8, r31, -20
+				ld r7, r31, -8  ;max --> r7
+				add r7, r7, r6  ;max + L --> r7 (incremento pos en texto)
+				st r7, r31, -8
+				ld r24, r31, -36  ;longcad (modificable) --> r24
+				sub r24, r24, r6  ;le resto los caracteres ya leidos
+				add r24, r24, 1  ;le sumo 1 por el primer caracter, ese ya se resta al comienzo de buclBscMax
+				st r24, r31, -36
+				ld.bu r5, r31, -28  ;byte temporal --> r5
+				ld r6, r31, -32  ;pos en byte temporal --> r6
+				set r5, r5, r6  ;pongo a 1 esa pos en el byte temporal
+				st r5, r31, -28  ;guardo byte temporal
+				sub r6, r6, 1
+				cmp r3, r6, 0x1f
+				bb1 eq, r3, actualizaB ;si son iguales ya se ha terminado con ese byte temporal
+				st r6, r31, -32  ;guardo pos byte temporal
+				br buclBscMax
+
+actualizaB:     ld.bu r6, r31, -28  ;byte temporal --> r6
+				ld r7, r31, -24  ;pos en mascBytes --> r7
+				st.b r6, r7, 0  ;guardo el byte en la masc
+				addu r7, r7, 1  ;incremento en 1 la pos en mascBytes
+				st r7, r31, -24  ;guardo pos en mascBytes
+				st r0, r31, -28  ;reinicio byte temporal
+				addu r6, r0, 0x27
+				st r6, r31, -32  ;reinicio pos en byte temporal
+				cmp r3, r28, 1234
+				bb1 eq, r3, siUtil
+				br buclBscMax
+
+FinComp:		ld r17, r31, -20 ;pos en comprdo
+				add r18, r0, -37
+				sub r18, r18, r17  ; r18 = -37 - pos comprdo
+				addu r16, r0, 0
+				st.b r16, r31, r18  ;se guarda un 0 (marcar el final del texto, por si acaso habia otros elementos en esa posicion de memoria)
+				ld r5, r31, -32  ;pos byte temporal --> r5
+				cmp r3, r5, 0x27
+				bb1 eq, r3, siUtil  ;si son iguales, este byte temporal no ha sido utilizado
+				add r28, r0, 1234  ;marca viene de FinComp
+				br actualizaB
+			
+siUtil:			ld r5, r31, 12  ;dir comprdo --> r5
+				ld.bu r6, r31, -4  ;primer byte de longcad --> r6
+				ld.bu r7, r31, -3  ;segundo byte de longcad --> r7
+				st.b r6, r5, 0  ;guarda primer byte de longcad
+				st.b r7, r5, 1  ;guarda segundo byte de longcad
+				add r6, r0, 1  ;M = 1 --> r5
+				st.b r6, r5, 2  ;guarda M = 1
+				ld r6, r31, -24  ;pos en mascBytes
+				sub r6, r6, r5  ;resto dir comprdo
+				st r6, r31, -24 
+				ld.bu r6, r31, -24  ;primer byte tamaño mascBytes --> r6
+				ld.bu r7, r31, -23  ;segundo byte tamaño mascBytes --> r7
+				st.b r6, r5, 3  ;guarda primer byte de tamaño mascBytes
+				st.b r7, r5, 4  ;guarda segundo byte de tamaño mascBytes
+				ld r16, r31, -24  
+				ld r23, r31, 12
+				add r16, r16, r23  ;recupero valor pos mascBytes, para recorrer comprdo (resultado)
+				sub r15, r31, 37  ;utilizare r15 para recorrer comprdo 
+				add r9, r0, r30
+				ld r9, r31, -20  ;cojo pos en comprdo como contador de caracteres copiados
+				
+copyComprdo:	ld.bu r17, r15, 0  ;cojo byte de texto comprdo
+				st.b r17, r16, 0  ;lo copio en comprdo (resultado)
+				sub r15, r15, 1
+				add r16, r16, 1  ;incremento punteros
+				sub r9, r9, 1  ;decremento pos en comprdo
+				cmp r3, r9, 0
+				bb0 eq, r3, copyComprdo
+				ld r23, r31, 12  ;dir comprdo
+				sub r29, r16, r23
+				add r30, r30, 36
+				ld r5, r31, -4  ;longcad  
+				divu r9, r5, 4  ;division entera r5/4 --> r9
+				mulu r9, r9, 4   ;si r5 era multiplo de 4, r9*4 = r5
+				cmp r3, r9, r5
+				bb1 eq, r3, multiplo42
+				divu r9, r5, 4  ;no era multiplo de 4, r29/4 --> r9
+				addu r9, r9, 1  ; se suma 1 para llegar al siguiente entero multiplo de 4
+				mulu r5, r9, 4  ; (r9 + 1)*4 = r29
+multiplo42:		add r30, r30, r5
+				POP(r31)  
+				POP(r1)
+				jmp(r1)
+				
+				
+Descomprime:    PUSH(r1)
+				PUSH(r31)
+				add r31, r30, r0
+				sub r30, r30, 32  ;para variables locales
+				ld r5, r31, 8  ;dir com
+				ld.bu r6, r5, 0  ;primer byte long desc
+				ld.bu r7, r5, 1  ;segundo byte long desc
+				st.b r6, r31, -16  ;guardo primer byte long desc
+				st.b r7, r31, -15  ;guardo segundo byte long desc
+				ld.bu r6, r5, 3  ;primer byte desplazamiento desde dir com a texto comprdo
+				ld.bu r7, r5, 4  ;segundo byte desplazamiento desde dir com a texto comprdo
+				st.b r6, r31, -8  ;guardo primer byte en pos com
+				st.b r7, r31, -7  ;guardo segundo byte en pos com
+				st r0, r31, -4  ;pos desc
+				add r6, r5, 5  ;dir com + 5 = dir mapa bits
+				st r6, r31, -12  ;guardo dir mapa bits
+				ld.bu r6, r5, 2  ;M --> r6
+				st.b r6, r31, -20  ;guardo M
+				ld r6, r31, -20  ;cargo M
+				mulu r6, r6, 8  ;M * 8 caract a copiar
+				ld r15, r31, 8  ;dir com
+				ld r16, r31, 12  ;dir desc
+				
+Mcaract:        ld r13, r31, -8  ;pos com
+				ld r14, r31, -4  ;pos desc
+				addu r13, r13, r15  ;pos com + dir com 
+				addu r14, r14, r16  ;pos desc + dir desc
+				ld.bu r17, r13, 0  ;byte en pos com + dir com
+				st.b r17, r14, 0  ;guardo byte en pos desc + dir desc
+				addu r13, r13, 1
+				addu r14, r14, 1  ;incremento pos
+				sub r13, r13, r15
+				sub r14, r14, r16  ;le quito a pos com y pos desc las dir
+				st r13, r31, -8
+				st r14, r31, -4  ;guardo pos
+				ld r7, r31, -16  ;long desc
+				sub r7, r7, 1  ;decremento long desc
+				st r7, r31, -16  ;guardo long desc
+				sub r6, r6, 1  ;decremento M * 8
+				cmp r3, r6, 0
+				bb0 eq, r3, Mcaract  ;si M * 8 != 0, no terminado
+				add r5, r0, 0x27  ;pos byte temporal
+				st r5, r31, -20  ;guardo pos byte temporal
+				ld r6, r31, -12  ;dir mapa bits
+				ld.bu r7, r6, 0  ;byte temporal
+				st.b r7, r31, -24  ;guardo byte temporal
+				
+buclDesc:       ld r23, r31, -16  ;long desc
+				cmp r3, r23, 0
+				bb1 eq, r3, finDesc
+				ld r14, r31, -20  ;pos byte temporal
+				cmp r3, r14, 0x1f
+				bb1 eq, r3, actualizaB2
+				ld.bu r13, r31, -24  ;byte temporal
+				ext r8, r13, r14  ;extraigo bit de la posicion actual
+				sub r14, r14, 1  ;decremento pos byte temporal
+				st r14, r31, -20  ;guardo pos byte temporal
+				cmp r3, r8, 0
+				bb1 eq, r3, bit0  ;si el bit es 0, se cumple la condicion
+				ld r15, r31, 8  ;dir com
+				ld r16, r31, 12  ;dir desc
+			    ld r13, r31, -8  ;pos com
+				ld r14, r31, -4  ;pos desc
+				addu r13, r13, r15  ;pos com + dir com 
+				addu r14, r14, r16  ;pos desc + dir desc
+				ld.bu r6, r13, 0  ;primer byte de P
+				ld.bu r7, r13, 1  ;segundo byte de P
+				st.b r6, r31, -28  ;guardo primer byte de P
+				st.b r7, r31, -27  ;guardo segundo byte de P
+				ld.bu r6, r13, 2  ;byte de L
+				st.b r6, r31, -32  ;guardo byte de L
+				ld r6, r31, -28  ;P --> r6
+				ld r7, r31, -32  ;L --> r7
+				addu r24, r16, r6  ;dir desc + P
+				ld r27, r31, -8  ;pos com
+				addu r27, r27, 3  ;incremento 3 pos com
+				st r27, r31, -8
+				
+buclPyL:        cmp r3, r7, 0				
+				bb1 eq, r3, buclDesc  ;ya terminado todo caract L veces
+				ld.bu r17, r24, 0  ;copio caract
+				st.b r17, r14, 0  ;guardo caract
+				ld r25, r31, -16  ;long desc
+				sub r25, r25, 1  ;decremento long desc
+				st r25, r31, -16  ;guardo long desc
+				addu r24, r24, 1  ;incremento desplazamiento desde dir com a texto comprdo + dir com + P
+				addu r14, r14, 1  ;incremento pos desc + dir desc
+				ld r26, r31, -4  ;pos desc
+				addu r26, r26, 1  ;incremento pos desc
+				st r26, r31, -4
+				sub r7, r7, 1  ;decremento L
+				br buclPyL
+				
+bit0:           ld r15, r31, 8  ;dir com
+				ld r16, r31, 12  ;dir desc
+			    ld r13, r31, -8  ;pos com
+				ld r14, r31, -4  ;pos desc
+				addu r13, r13, r15  ;pos com + dir com 
+				addu r14, r14, r16  ;pos desc + dir desc
+				ld.bu r17, r13, 0  ;cojo caract
+				st.b r17, r14, 0  ;copio caract
+				addu r13, r13, 1
+				addu r14, r14, 1  ;incremento pos
+				sub r13, r13, r15
+				sub r14, r14, r16  ;le quito a pos com y pos desc las dir
+				st r13, r31, -8
+				st r14, r31, -4  ;guardo pos
+				ld r7, r31, -16  ;long desc
+				sub r7, r7, 1  ;decremento long desc
+				st r7, r31, -16  ;guardo long desc
+				br buclDesc
+				
+actualizaB2:    add r5, r0, 0x27  ;reinicio pos byte temporal
+				st r5, r31, -20  ;guardo pos byte temporal
+				ld r5, r31, -12  ;dir mapa bits
+				addu r5, r5, 1  ;incremento dir mapa bits
+				st r5, r31, -12
+				ld.bu r6, r5, 0  ;cojo siguiente byte temporal
+				st.b r6, r31, -24  ;guardo siguiente byte temporal
+				br buclDesc
+				
+finDesc:        ld r16, r31, 12  ;dir desc
+				ld r14, r31, -4  ;pos desc
+				addu r14, r14, r16  ;pos desc + dir desc
+				st r0, r31, -32
+				ld.bu r17, r31, -32
+				st.b r17, r14, 0  ;añado terminador \0
+				ld r5, r31, 8  ;dir com
+				ld.bu r6, r5, 0  ;primer byte long desc
+				ld.bu r7, r5, 1  ;segundo byte long desc
+				st.b r6, r31, -16  ;guardo primer byte long desc
+				st.b r7, r31, -15  ;guardo segundo byte long desc
+				ld r29, r31, -16  ;retorno en r29 long desc
+				add r30, r30, 32
+				POP(r31)
+				POP(r1)
+				jmp(r1)
+				
+					
+Verifica: 		PUSH(r1)
+				PUSH(r31)
+				add r31, r30, r0
+				sub r30, r30, 8
+				ld r10, r31, 8  ;dir texto
+				PUSH (r10)
+				bsr Checksum
+				POP(r4)
+				ld r23, r31, 16  ;dir checksum1
+				st r29, r23, 0  ;guardo checksum1
+				ld r10, r31, 8  ;dir texto
+				PUSH(r10)
+				bsr LongCad
+				POP(r4)
+				add r15, r29, 0  ;copio longcad a r15
+				divu r15, r15, 8  ;tamaño mapa bits = longcad / 8
+				add r29, r29, r15  ;sumo a longcad el tamaño mapa de bits
+				add r29, r29, 5  ;sumo a longcad los 5 bytes primeros que ocupa comprime 
+				
+				add r5, r29, 0  ;guardo r29 en r5
+				divu r9, r29, 4  ;division entera r29/4 --> r9
+				mulu r9, r9, 4   ;si r29 era multiplo de 4, r9*4 = r29
+				cmp r3, r9, r29
+				bb1 eq, r3, mltplo41  ;r29 era multiplo de 4
+				divu r9, r29, 4  ;no era multiplo de 4, r29/4 --> r9
+				addu r9, r9, 1  ; se suma 1 para llegar al siguiente entero multiplo de 4
+				mulu r29, r9, 4  ; (r9 + 1)*4 = r29
+mltplo41:		sub r30, r30, r29  ;almaceno espacio para texto comprimido	
+				st r29, r31, -4  ;guardo espacio para texto comprimido
+				add r20, r30, 0  ;dir donde empezara texto comprimido
+				add r5, r5, 1  ;incremento r5 por el terminador "\0" del texto descomprimido
+				divu r9, r5, 4  ;division entera r5/4 --> r9
+				mulu r9, r9, 4   ;si r5 era multiplo de 4, r9*4 = r5
+				cmp r3, r9, r5
+				bb1 eq, r3, mltplo42  ;r5 era multiplo de 4
+				divu r9, r5, 4  ;no era multiplo de 4, r5/4 --> r9
+				addu r9, r9, 1  ; se suma 1 para llegar al siguiente entero multiplo de 4
+				mulu r5, r9, 4  ; (r9 + 1)*4 = r5
+mltplo42:		sub r30, r30, r5  ;almaceno espacio para texto descomprimido	
+				st r5, r31, -8  ;guardo espacio para texto descomprimido
+				add r20, r5, r30  ;dir texto comprimido
+				PUSH (r20)
+				ld r15, r31, 8  ;dir texto
+				PUSH (r15)
+				bsr Comprime
+				POP(r4)
+				POP(r4)
+				add r21, r30, 0  ;dir texto descomprimido
+				ld r20, r31, -8  ;espacio texto descomprimido
+				add r20, r20, r30  ;dir texto comprimido
+				PUSH (r21)
+				PUSH (r20)
+				bsr Descomprime
+				POP(r4)
+				POP(r4)
+				add r21, r30, 0  ;dir texto descomprimido
+				PUSH (r21)
+				bsr Checksum
+				POP(r4)
+				ld r25, r31, 8
+				ld r23, r31, 12  ;dir checksum2
+				st r29, r23, 0  ;guardo checksum2
+				ld r24, r31, 16  ;dir CheckSum1
+				ld r10, r24, 0  ;CheckSum1
+				ld r11, r23, 0  ;CheckSum2
+				add r29, r0, 0  ;se pone r29 a 0
+				cmp r3, r10, r11
+				bb1 eq, r3, CheckIgual  ;si los checksum son iguales salta 
+				sub r29, r29, 1  ;resta 1 a r29 (0 - 1 = -1), checksum diferentes
+CheckIgual:     ld r20, r31, -8  ;espacio reservado para texto descomprimido
+				ld r21, r31, -4  ;espacio reservado para texto comprimido
+				add r30, r30, r20
+				add r30, r30, r21
+				add r30, r30, 8  ;devuelvo r30 a su valor inicial
+				POP(r31)
+				POP(r1)
+				jmp(r1)
+				
+;///////////////////Datos para las pruebas de cada subrutina///////////////
+
+org 4000
+cadena:     data    "rojocteres fuetyggggggg\0"  ;datos LongCad
+;cadena      data    "\0"
+;cadena      data    "hola que tal estas\0"
+
+org 4200
+ref:        data    "hola que tal estas porque jaja\0" ;datos BuscaCar
+C:          data    "q"
+from:       data    3
+to:         data    15
+
+org 4400
+cadena1:    data    "hola me llamo manolo\0"   ;datos CoincidenCad
+cadena2:    data    "hola me llamo manolo\0"
+cadena3:    data    "hola me llamo jose\0"  
+cadena4:    data    "hola me llamo \0"      
+
+org 4800
+ref2:       data	"1011010000111000110111100111111111\0"		;datos BuscaMax
+max:		data	25
+org 4900
+jj:   		res     8     
+
+org 5000
+texto:      data    "hola que tal\0estas"                ;datos CheckSum
+;texto:      data    "hol\0dtye"
+;texto:      data    "ho\0dtye"
+;texto:      data    "h\0dtye"
+;texto:      data    "\0dtye"
+org 5100
+
+texto2:     data    "tres tristes tigres comen trigo en un trigal, el primer tigre que...\0"  ;datos Comprime
+;texto2:     data    "0123456789\0"
+
+org 5500
+
+comprdo:    data    "\0"
+
+org 6000
+
+com: 		data 0x07010014, 0x30000000, 0x34333231, 0x38373635   ;datos Descomprime
+			data 0x37383939, 0x33343536, 0x00303132
+
+;com:        data 0x0b010044, 0x10102400, 0x74004000, 0x20736572
+;			data 0x73697274, 0x04000274, 0x00016769, 0x6d6f6304
+;			data 0x00046e65, 0x206f6704, 0x75206e65, 0x61060018
+;			data 0x65202c6c, 0x7270206c, 0x72656d69, 0x2006000c
+;			data 0x2e657571, 0x00002e2e
+
+
+org 7800
+desc:       data    "\0"  ;datos Verifica
+CheckSum1:   res     8
+CheckSum2:   res     8
